@@ -10,7 +10,7 @@ if st.button("Generar Tabla", type="primary"):
     seq = secuencia.strip().upper().replace(" ", "")
     
     # ---------- 1. Parsear la secuencia ----------
-    steps = []          # lista de pasos, cada paso es lista de strings ["A+","B+"] o ["B-"]
+    steps = []
     i = 0
     while i < len(seq):
         if seq[i] == '(':
@@ -40,63 +40,76 @@ if st.button("Generar Tabla", type="primary"):
 
     n = len(steps)
 
-    # ---------- 2. Tabla Principal ----------
+    # ---------- 2. Tabla Principal (formato Excel) ----------
     st.subheader(f"Secuencia: **{seq}**")
     st.markdown("### Tabla Principal")
 
-    # Encabezado de secuencia
-    sec_header = ["Secuencia"]
+    # Construir las filas como en Excel:
+    # Fila 1: secuencia (cada celda: un movimiento o grupo)
+    # Fila 2: sensor (K1, K2, ...)
+    # Fila 3: señales (Y...)
+    # Fila 4: Secuencia bin (A1, B0, etc.)
+    
+    # Encabezado de secuencia: celdas individuales
+    sec_row = []
     for s in steps:
         if len(s) == 1:
-            sec_header.append(s[0])
+            sec_row.append(s[0])
         else:
-            sec_header.append(f"({' '.join(s)})")
+            sec_row.append(f"({' '.join(s)})")
     
-    sensor_row = ["sensor"] + [f"K{i+1}" for i in range(n)]
-    signal_row = ["señales"] + [" ".join(signal_map[m] for m in s) for s in steps]
-    # Secuencia bin: estado DESPUÉS de cada paso (lo que se activa)
-    bin_after = ["Sec. bin"] + [" ".join(binary_map[m] for m in s) for s in steps]
-
-    table_data = [sec_header, sensor_row, signal_row, bin_after]
-    st.table(list(map(list, zip(*table_data))))
-
-    # ---------- 3. Bloques ----------
+    sensor_row = [f"K{i+1}" for i in range(n)]
+    signal_row = [" ".join(signal_map[m] for m in s) for s in steps]
+    binary_row = [" ".join(binary_map[m] for m in s) for s in steps]
+    
+    # Mostrar como tabla de 4 filas (cada fila es una lista de celdas)
+    # Streamlit necesita que cada fila tenga el mismo número de columnas.
+    # Usamos st.columns para imitar el aspecto de Excel.
+    
+    # Número de columnas = n
+    cols = st.columns(n)
+    for j, col in enumerate(cols):
+        with col:
+            st.markdown(f"**{sec_row[j]}**")
+            st.write(sensor_row[j])
+            st.write(signal_row[j])
+            st.write(binary_row[j])
+    
+    # Separador
+    st.markdown("---")
+    
+    # ---------- 3. Bloques (sin cambios, ya funciona) ----------
     st.markdown("### Bloques")
 
-    # Calcular el estado resultante de cada paso (para usar como condición del bloque siguiente)
-    # Guardamos para cada paso la lista de estados que produce
-    step_states = []  # lista de strings con los estados (ej: "A1 B1")
+    # Calcular el estado resultante de cada paso
+    step_states = []
     for s in steps:
         states = [binary_map[m] for m in s]
         states.sort()
         step_states.append(" ".join(states))
 
-    # Para el bloque 1, la condición es el estado del último paso
     last_step_state = step_states[-1] if step_states else ""
 
     for idx, s in enumerate(steps, start=1):
         st.markdown(f"**Bloque {idx}**")
         
-        # ---- Primera línea ----
         if idx == 1:
             prev_sensor = "Inicio"
             condition = last_step_state
         else:
             prev_sensor = f"K{idx-1}"
-            condition = step_states[idx-2]  # estado del paso anterior
+            condition = step_states[idx-2]
         
         next_sensor = f"K{(idx % n) + 1}" if idx % n != 0 else "K1"
         reset_sensor = f"K{idx}"
         
-        # Usamos espacios fijos para que se vea como en tu ejemplo
         line1 = f"{prev_sensor}     {condition}     {next_sensor}     {reset_sensor}"
         st.text(line1)
         
-        # ---- Líneas de salida (una por cada movimiento del paso) ----
         for mov in s:
             sig = signal_map[mov]
             st.text(f"K{idx}                          {sig}")
         
-        st.text("")  # línea vacía entre bloques
+        st.text("")
 
-    st.caption("")  # sin mensajes extra
+    st.caption("")
