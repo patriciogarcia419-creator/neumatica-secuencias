@@ -38,7 +38,7 @@ if st.button("Generar Tabla", type="primary"):
     binary_map = {'A+':'A1','A-':'A0','B+':'B1','B-':'B0','C+':'C1','C-':'C0'}
     n = len(steps)
 
-    # Tabla principal en columnas (como Excel)
+    # Tabla principal (formato Excel)
     st.subheader(f"Secuencia: **{seq}**")
     st.markdown("### Tabla Principal")
     sec_row = []
@@ -59,10 +59,10 @@ if st.button("Generar Tabla", type="primary"):
             st.write(binary_row[j])
     st.markdown("---")
 
-    # Bloques con formato texto plano alineado
+    # Bloques
     st.markdown("### Bloques")
 
-    # Calcular estados resultantes de cada paso
+    # Estados resultantes de cada paso
     step_states = []
     for s in steps:
         states = [binary_map[m] for m in s]
@@ -70,19 +70,16 @@ if st.button("Generar Tabla", type="primary"):
         step_states.append(" ".join(states))
     last_step_state = step_states[-1] if step_states else ""
 
-    # Definir anchos de columna fijos (ajústalos si quieres)
-    # Col1: ancho 8 (para "Inicio" o "K99")
-    # Col2: ancho 8 (para condiciones como "A0" o "A1 B1")
-    # Col3: ancho 5 (para "K2", "K3")
-    # Col4: ancho 5 (para "K1", "K2")
-    w1 = 8
-    w2 = 8
-    w3 = 5
-    w4 = 5
+    # Anchos fijos (ajusta si quieres más espacio)
+    w1 = 8   # para "Inicio" o "K99"
+    w2 = 8   # para estados como "A0", "A1 B1"
+    w3 = 5   # para "K2"
+    w4 = 5   # para "K1"
 
     for idx, s in enumerate(steps, start=1):
         st.markdown(f"**Bloque {idx}**")
-        # Fila de condiciones
+        
+        # Primera línea: condiciones
         if idx == 1:
             prev = "Inicio"
             cond = last_step_state
@@ -91,15 +88,21 @@ if st.button("Generar Tabla", type="primary"):
             cond = step_states[idx-2]
         next_sensor = f"K{(idx % n) + 1}" if idx % n != 0 else "K1"
         reset = f"K{idx}"
-        # Formatear primera línea
         line1 = f"{prev:<{w1}}{cond:<{w2}}{next_sensor:<{w3}}{reset}"
         st.code(line1, language="text")
-        # Filas de cada movimiento (señal)
+        
+        # Para cada movimiento en el paso, dos líneas:
+        # 1. línea con solo K{idx} (vacío)
+        # 2. línea con K{idx} y la señal
         for mov in s:
             sig = signal_map[mov]
-            # Las columnas 2 y 3 van vacías, solo se llena col1 y col4
-            # col1 = f"K{idx}", col4 = sig, el resto espacios
+            # Línea vacía (solo el sensor)
+            line_empty = f"K{idx:<{w1-1}}{'':<{w2}}{'':<{w3}}{''}"
+            st.code(line_empty, language="text")
+            # Línea con señal
             line_sig = f"K{idx:<{w1-1}}{'':<{w2}}{'':<{w3}}{sig}"
             st.code(line_sig, language="text")
-        st.markdown("")  # línea blanca
+        
+        st.markdown("")  # línea blanca entre bloques
+
     st.caption("")
