@@ -1,15 +1,15 @@
 import streamlit as st
 
 st.set_page_config(page_title="Secuencias Neumática", layout="wide")
-st.title("🛠 Generador de Tablas Neumática / Electro-Neumática")
-st.markdown("Pega tu secuencia (ejemplo: (A+B+)B-A- )")
+st.title("🛠 Generador de Tablas Neumática")
+st.markdown("Pega tu secuencia y genera la tabla")
 
 secuencia_input = st.text_input("Secuencia:", value="(A+B+)B-A-", label_visibility="hidden")
 
 if st.button("🚀 Generar Tabla", type="primary"):
     seq = secuencia_input.strip().upper().replace(" ", "")
     
-    # Parseo de la secuencia
+    # Parseo
     movements = []
     i = 0
     while i < len(seq):
@@ -36,49 +36,32 @@ if st.button("🚀 Generar Tabla", type="primary"):
 
     st.subheader(f"Secuencia: **{seq}**")
 
-    # === Tabla Principal ===
+    # ==================== TABLA PRINCIPAL ====================
     st.markdown("### Tabla Principal")
 
-    seq_header = ["Secuencia"] + [f"({'+'.join(m)})" if len(m) > 1 else m[0] for m in movements]
-    sensor_row = ["sensor"] + [f"K{i+1}" for i in range(len(movements))]
+    seq_header = ["Secuencia"] + [f"({'+'.join(m)})" if len(m)>1 else m[0] for m in movements]
+    sensor_row = ["sensor"]    + [f"K{i+1}" for i in range(len(movements))]
     
-    signal_row = ["señales"]
-    binary_row = ["Sec. bin"]
+    signal_map = {'A+':'Y1','A-':'Y2','B+':'Y3','B-':'Y4','C+':'Y5','C-':'Y6'}
+    binary_map = {'A+':'A1','A-':'A0','B+':'B1','B-':'B0','C+':'C1','C-':'C0'}
 
-    signal_map = {'A+': 'Y1', 'A-': 'Y2', 'B+': 'Y3', 'B-': 'Y4', 
-                  'C+': 'Y5', 'C-': 'Y6'}
+    signal_row = ["señales"] + [" ".join(signal_map.get(move, "??") for move in step) for step in movements]
+    binary_row = ["Sec. bin"] + [" ".join(binary_map.get(move, "??") for move in step) for step in movements]
 
-    binary_map = {'A+': 'A1', 'A-': 'A0', 'B+': 'B1', 'B-': 'B0', 
-                  'C+': 'C1', 'C-': 'C0'}
-
-    signals_list = []
-    binary_list = []
-
-    for step in movements:
-        step_signals = [signal_map.get(move, "Y?") for move in step]
-        step_binary  = [binary_map.get(move, "?") for move in step]
-        
-        signals_list.append(" ".join(step_signals))
-        binary_list.append(" ".join(step_binary))
-
-    signal_row += signals_list
-    binary_row += binary_list
-
-    # Crear y mostrar tabla
     table_data = [seq_header, sensor_row, signal_row, binary_row]
     table_transposed = list(map(list, zip(*table_data)))
+
     st.table(table_transposed)
 
-    # === Bloques ===
+    # ==================== BLOQUES ====================
     st.markdown("### Bloques")
 
     for idx, step in enumerate(movements, 1):
         move_str = " + ".join(step) if len(step) > 1 else step[0]
-        with st.expander(f"**Bloque {idx}** ─ {move_str}", expanded=True):
-            st.markdown(f"**Movimiento:** `{move_str}`")
-            st.markdown(f"**Sensor:** `K{idx}`")
-            st.markdown(f"**Señales:** `{signals_list[idx-1]}`")
-            st.markdown(f"**Binario:** `{binary_list[idx-1]}`")
+        
+        st.markdown(f"**Bloque {idx}**")
+        st.text(f"Inicio     B0     K{idx}     K{idx if idx==1 else idx-1 if idx>1 else 1}")
+        st.text(f"K{idx}                       Y{','.join([str(list(signal_map.values()).index(signal_map[m])+1) for m in step])}".replace("Y0","??"))
+        st.text(" " * 30)   # separador visual
 
-    st.success("¡Tabla generada correctamente!")
-    st.caption("Formato ajustado a tu convención fija de Y y estados binarios")
+    st.success("Tabla generada")
