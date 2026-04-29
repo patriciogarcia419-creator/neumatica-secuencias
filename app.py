@@ -70,11 +70,11 @@ if st.button("Generar Tabla", type="primary"):
         step_states.append(" ".join(states))
     last_step_state = step_states[-1] if step_states else ""
 
-    # Anchos fijos (ajusta si quieres más espacio)
-    w1 = 8   # para "Inicio" o "K99"
-    w2 = 8   # para estados como "A0", "A1 B1"
-    w3 = 5   # para "K2"
-    w4 = 5   # para "K1"
+    # Anchos fijos
+    w1 = 8
+    w2 = 8
+    w3 = 5
+    w4 = 5
 
     for idx, s in enumerate(steps, start=1):
         st.markdown(f"**Bloque {idx}**")
@@ -91,15 +91,9 @@ if st.button("Generar Tabla", type="primary"):
         line1 = f"{prev:<{w1}}{cond:<{w2}}{next_sensor:<{w3}}{reset}"
         st.code(line1, language="text")
         
-        # Para cada movimiento en el paso, dos líneas:
-        # 1. línea con solo K{idx} (vacío)
-        # 2. línea con K{idx} y la señal
+        # Para cada movimiento en el paso, una sola línea con la señal
         for mov in s:
             sig = signal_map[mov]
-            # Línea vacía (solo el sensor)
-            line_empty = f"K{idx:<{w1-1}}{'':<{w2}}{'':<{w3}}{''}"
-            st.code(line_empty, language="text")
-            # Línea con señal
             line_sig = f"K{idx:<{w1-1}}{'':<{w2}}{'':<{w3}}{sig}"
             st.code(line_sig, language="text")
         
