@@ -44,13 +44,6 @@ if st.button("Generar Tabla", type="primary"):
     st.subheader(f"Secuencia: **{seq}**")
     st.markdown("### Tabla Principal")
 
-    # Construir las filas como en Excel:
-    # Fila 1: secuencia (cada celda: un movimiento o grupo)
-    # Fila 2: sensor (K1, K2, ...)
-    # Fila 3: señales (Y...)
-    # Fila 4: Secuencia bin (A1, B0, etc.)
-    
-    # Encabezado de secuencia: celdas individuales
     sec_row = []
     for s in steps:
         if len(s) == 1:
@@ -62,11 +55,6 @@ if st.button("Generar Tabla", type="primary"):
     signal_row = [" ".join(signal_map[m] for m in s) for s in steps]
     binary_row = [" ".join(binary_map[m] for m in s) for s in steps]
     
-    # Mostrar como tabla de 4 filas (cada fila es una lista de celdas)
-    # Streamlit necesita que cada fila tenga el mismo número de columnas.
-    # Usamos st.columns para imitar el aspecto de Excel.
-    
-    # Número de columnas = n
     cols = st.columns(n)
     for j, col in enumerate(cols):
         with col:
@@ -75,13 +63,12 @@ if st.button("Generar Tabla", type="primary"):
             st.write(signal_row[j])
             st.write(binary_row[j])
     
-    # Separador
     st.markdown("---")
     
-    # ---------- 3. Bloques (sin cambios, ya funciona) ----------
+    # ---------- 3. Bloques con formato bonito y alineado ----------
     st.markdown("### Bloques")
 
-    # Calcular el estado resultante de cada paso
+    # Calcular estados resultantes de cada paso
     step_states = []
     for s in steps:
         states = [binary_map[m] for m in s]
@@ -90,9 +77,21 @@ if st.button("Generar Tabla", type="primary"):
 
     last_step_state = step_states[-1] if step_states else ""
 
+    # Ancho fijo para la primera columna (máximo "Inicio" o "K99")
+    max_len = max(len("Inicio"), max(len(f"K{i}") for i in range(1, n+2)))
+    first_col_width = max_len + 2  # espacios extra
+
+    # Ancho fijo para la columna de condición (la más larga entre todos los estados)
+    max_cond_len = max(len(step_states[0]), max(len(s) for s in step_states)) if step_states else 0
+    cond_width = max_cond_len + 2
+
+    # Ancho fijo para las columnas de sensores (K1, K2, ...)
+    sensor_width = 4  # "K99" son 3, pero dejamos 4
+
     for idx, s in enumerate(steps, start=1):
         st.markdown(f"**Bloque {idx}**")
         
+        # ---- Primera línea ----
         if idx == 1:
             prev_sensor = "Inicio"
             condition = last_step_state
@@ -103,13 +102,19 @@ if st.button("Generar Tabla", type="primary"):
         next_sensor = f"K{(idx % n) + 1}" if idx % n != 0 else "K1"
         reset_sensor = f"K{idx}"
         
-        line1 = f"{prev_sensor}     {condition}     {next_sensor}     {reset_sensor}"
-        st.text(line1)
+        # Formatear con espacios fijos
+        line1 = f"{prev_sensor:<{first_col_width}}{condition:<{cond_width}}{next_sensor:<{sensor_width}}{reset_sensor}"
+        st.code(line1, language="text")
         
+        # ---- Líneas de salida (una por movimiento) ----
+        # La primera columna siempre es K{idx} alineada
+        # La tercera columna es la señal (Yxx)
         for mov in s:
             sig = signal_map[mov]
-            st.text(f"K{idx}                          {sig}")
+            # Dos espacios en medio para simular el formato original
+            line = f"K{idx:<{first_col_width-1}}{'':<{cond_width}}{sig}"
+            st.code(line, language="text")
         
-        st.text("")
+        st.markdown("")  # línea blanca separadora
 
     st.caption("")
