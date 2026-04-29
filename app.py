@@ -9,7 +9,7 @@ secuencia = st.text_input("Secuencia:", value="(A+B+)B-A-", label_visibility="vi
 if st.button("Generar Tabla", type="primary"):
     seq = secuencia.strip().upper().replace(" ", "")
     
-    # ---------- 1. Parsear la secuencia ----------
+    # Parsear
     steps = []
     i = 0
     while i < len(seq):
@@ -34,27 +34,22 @@ if st.button("Generar Tabla", type="primary"):
             else:
                 i += 1
 
-    # Mapeos fijos
     signal_map = {'A+':'Y1','A-':'Y2','B+':'Y3','B-':'Y4','C+':'Y5','C-':'Y6'}
     binary_map = {'A+':'A1','A-':'A0','B+':'B1','B-':'B0','C+':'C1','C-':'C0'}
-
     n = len(steps)
 
-    # ---------- 2. Tabla Principal (formato Excel, compacta) ----------
+    # Tabla principal en columnas (como Excel)
     st.subheader(f"Secuencia: **{seq}**")
     st.markdown("### Tabla Principal")
-
     sec_row = []
     for s in steps:
         if len(s) == 1:
             sec_row.append(s[0])
         else:
             sec_row.append(f"({' '.join(s)})")
-    
     sensor_row = [f"K{i+1}" for i in range(n)]
     signal_row = [" ".join(signal_map[m] for m in s) for s in steps]
     binary_row = [" ".join(binary_map[m] for m in s) for s in steps]
-    
     cols = st.columns(n)
     for j, col in enumerate(cols):
         with col:
@@ -62,10 +57,9 @@ if st.button("Generar Tabla", type="primary"):
             st.write(sensor_row[j])
             st.write(signal_row[j])
             st.write(binary_row[j])
-    
     st.markdown("---")
-    
-    # ---------- 3. Bloques con formato de tabla (barras y separadores) ----------
+
+    # Bloques con formato texto plano alineado
     st.markdown("### Bloques")
 
     # Calcular estados resultantes de cada paso
@@ -74,42 +68,38 @@ if st.button("Generar Tabla", type="primary"):
         states = [binary_map[m] for m in s]
         states.sort()
         step_states.append(" ".join(states))
-
     last_step_state = step_states[-1] if step_states else ""
+
+    # Definir anchos de columna fijos (ajústalos si quieres)
+    # Col1: ancho 8 (para "Inicio" o "K99")
+    # Col2: ancho 8 (para condiciones como "A0" o "A1 B1")
+    # Col3: ancho 5 (para "K2", "K3")
+    # Col4: ancho 5 (para "K1", "K2")
+    w1 = 8
+    w2 = 8
+    w3 = 5
+    w4 = 5
 
     for idx, s in enumerate(steps, start=1):
         st.markdown(f"**Bloque {idx}**")
-        
-        # ---- Fila de condiciones (cabecera del bloque) ----
+        # Fila de condiciones
         if idx == 1:
-            prev_sensor = "Inicio"
-            condition = last_step_state
+            prev = "Inicio"
+            cond = last_step_state
         else:
-            prev_sensor = f"K{idx-1}"
-            condition = step_states[idx-2]
-        
+            prev = f"K{idx-1}"
+            cond = step_states[idx-2]
         next_sensor = f"K{(idx % n) + 1}" if idx % n != 0 else "K1"
-        reset_sensor = f"K{idx}"
-        
-        # Construir la tabla en markdown
-        # Primera fila: | Inicio | A0 | K2 | K1 |
-        row1 = f"| {prev_sensor} | {condition} | {next_sensor} | {reset_sensor} |"
-        # Separador: | --- | --- | --- | --- |
-        separator = "| --- | --- | --- | --- |"
-        
-        # Filas de señales: una por movimiento en este paso
-        # | K1 |   |   | Y1 |
-        signal_rows = []
+        reset = f"K{idx}"
+        # Formatear primera línea
+        line1 = f"{prev:<{w1}}{cond:<{w2}}{next_sensor:<{w3}}{reset}"
+        st.code(line1, language="text")
+        # Filas de cada movimiento (señal)
         for mov in s:
             sig = signal_map[mov]
-            signal_rows.append(f"| K{idx} |   |   | {sig} |")
-        
-        # Mostrar la tabla
-        st.markdown(row1)
-        st.markdown(separator)
-        for sr in signal_rows:
-            st.markdown(sr)
-        
-        st.markdown("")  # línea blanca entre bloques
-
+            # Las columnas 2 y 3 van vacías, solo se llena col1 y col4
+            # col1 = f"K{idx}", col4 = sig, el resto espacios
+            line_sig = f"K{idx:<{w1-1}}{'':<{w2}}{'':<{w3}}{sig}"
+            st.code(line_sig, language="text")
+        st.markdown("")  # línea blanca
     st.caption("")
