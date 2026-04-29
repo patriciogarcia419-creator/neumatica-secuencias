@@ -9,7 +9,7 @@ secuencia = st.text_input("Secuencia:", value="(A+B+)B-A-", label_visibility="vi
 if st.button("Generar Tabla", type="primary"):
     seq = secuencia.strip().upper().replace(" ", "")
     
-    # ---------- Parseo ----------
+    # Parsear
     steps = []
     i = 0
     while i < len(seq):
@@ -38,11 +38,11 @@ if st.button("Generar Tabla", type="primary"):
     binary_map = {'A+':'A1','A-':'A0','B+':'B1','B-':'B0','C+':'C1','C-':'C0'}
     n = len(steps)
 
-    # ---------- Tabla Principal (como la de Excel) ----------
+    # ---------- Tabla Principal (con st.columns, como la que usabas) ----------
     st.subheader(f"Secuencia: **{seq}**")
     st.markdown("### Tabla Principal")
 
-    # Encabezados de columnas
+    # Construir las filas
     sec_row = []
     for s in steps:
         if len(s) == 1:
@@ -51,35 +51,23 @@ if st.button("Generar Tabla", type="primary"):
             sec_row.append(f"({' '.join(s)})")
     sensor_row = [f"K{i+1}" for i in range(n)]
     signal_row = [" ".join(signal_map[m] for m in s) for s in steps]
-    
-    # Secuencia bin: estado antes del primer paso + después de cada paso
-    bin_states = []
-    # estado inicial (todos los cilindros en 0)
-    all_cyls = sorted(set(m[0] for s in steps for m in s))
-    bin_states.append(" ".join(f"{c}0" for c in all_cyls))
-    for s in steps:
-        bin_states.append(" ".join(binary_map[m] for m in s))
-    
-    # Crear tabla con 4 filas
-    col_headers = sec_row
-    row1 = ["secuencia"] + col_headers
-    row2 = ["sensor"] + sensor_row
-    row3 = ["señales"] + signal_row
-    row4 = ["Secuencia bin"] + bin_states
-    
-    # Mostrar como tabla markdown simple
-    table_md = "| " + " | ".join(row1) + " |\n"
-    table_md += "| " + " | ".join(["---"] * len(row1)) + " |\n"
-    table_md += "| " + " | ".join(row2) + " |\n"
-    table_md += "| " + " | ".join(row3) + " |\n"
-    table_md += "| " + " | ".join(row4) + " |"
-    st.markdown(table_md)
+    binary_row = [" ".join(binary_map[m] for m in s) for s in steps]
+
+    # Mostrar en columnas
+    cols = st.columns(n)
+    for j, col in enumerate(cols):
+        with col:
+            st.markdown(f"**{sec_row[j]}**")
+            st.write(sensor_row[j])
+            st.write(signal_row[j])
+            st.write(binary_row[j])
+
     st.markdown("---")
 
-    # ---------- Bloques ----------
+    # ---------- Bloques (ya están correctos, no los cambio) ----------
     st.markdown("### Bloques")
 
-    # Estados resultantes de cada paso (para condiciones)
+    # Estados resultantes de cada paso
     step_states = []
     for s in steps:
         states = [binary_map[m] for m in s]
@@ -87,16 +75,11 @@ if st.button("Generar Tabla", type="primary"):
         step_states.append(" ".join(states))
     last_step_state = step_states[-1] if step_states else ""
 
-    # Anchos fijos para alinear (ajusta si quieres)
-    w1 = 8   # "Inicio" o "K99"
-    w2 = 8   # "A0", "A1 B1"
-    w3 = 5   # "K2"
-    w4 = 5   # "K1"
+    w1, w2, w3, w4 = 8, 8, 5, 5
 
     for idx, s in enumerate(steps, start=1):
         st.markdown(f"**Bloque {idx}**")
         
-        # Línea de condiciones
         if idx == 1:
             prev = "Inicio"
             cond = last_step_state
@@ -110,21 +93,16 @@ if st.button("Generar Tabla", type="primary"):
         
         # Para cada movimiento en el paso
         if len(s) == 1:
-            # Movimiento individual: dos líneas (sensor solo y sensor+señal)
+            # Movimiento individual: dos líneas (vacía + señal)
             sig = signal_map[s[0]]
-            # Línea con sensor solo
-            line_empty = f"K{idx:<{w1-1}}{'':<{w2}}{'':<{w3}}{''}"
-            st.code(line_empty, language="text")
-            # Línea con sensor y señal
-            line_sig = f"K{idx:<{w1-1}}{'':<{w2}}{'':<{w3}}{sig}"
-            st.code(line_sig, language="text")
+            st.code(f"K{idx:<{w1-1}}{'':<{w2}}{'':<{w3}}{''}", language="text")
+            st.code(f"K{idx:<{w1-1}}{'':<{w2}}{'':<{w3}}{sig}", language="text")
         else:
-            # Múltiples movimientos (paralelo): una línea por cada uno con su señal
+            # Paralelo: una línea por cada movimiento con su señal
             for mov in s:
                 sig = signal_map[mov]
-                line_sig = f"K{idx:<{w1-1}}{'':<{w2}}{'':<{w3}}{sig}"
-                st.code(line_sig, language="text")
+                st.code(f"K{idx:<{w1-1}}{'':<{w2}}{'':<{w3}}{sig}", language="text")
         
-        st.markdown("")  # línea blanca entre bloques
+        st.markdown("")  # línea blanca
 
     st.caption("")
