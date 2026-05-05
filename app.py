@@ -34,7 +34,6 @@ if st.button("Generar Tabla", type="primary"):
             else:
                 i += 1
     
-    # Mapas extendidos hasta F
     signal_map = {'A+':'Y1','A-':'Y2','B+':'Y3','B-':'Y4','C+':'Y5','C-':'Y6',
                   'D+':'Y7','D-':'Y8','E+':'Y9','E-':'Y10','F+':'Y11','F-':'Y12'}
     
@@ -43,7 +42,7 @@ if st.button("Generar Tabla", type="primary"):
     
     n = len(steps)
     
-    # Tabla Principal (sin cambios)
+    # Tabla Principal
     st.subheader(f"Secuencia: **{seq}**")
     st.markdown("### Tabla Principal")
     
@@ -60,28 +59,20 @@ if st.button("Generar Tabla", type="primary"):
             st.write(signal_row[j])
             st.write(binary_row[j])
     
-    st.markdown(f"**Total de bloques: {n}**")
-    st.markdown("---")
-    
-    # Bloques (sin modificar el formato que tenías)
+    # Bloques - Formato EXACTO que pediste
     st.markdown("### Bloques")
-    w1, w2, w3, w4 = 8, 8, 5, 5
+    
     for idx, s in enumerate(steps, start=1):
-        st.markdown(f"**Bloque {idx}**")
-       
-        if idx == 1:
-            prev = "Inicio"
-            cond = "B0"
-        else:
-            prev = f"K{idx-1}"
-            cond = " ".join(binary_map.get(m, "??") for m in steps[idx-2])
-        
-        line1 = f"{prev:<{w1}}{cond:<{w2}}K{idx:<{w3}}K{idx}"
-        st.code(line1, language="text")
-       
         signals = " ".join(signal_map.get(m, "??") for m in s)
-        st.code(f"K{idx:<{w1-1}}{'':<{w2}}{'':<{w3}}{signals}", language="text")
-       
+        
+        st.markdown(f"**Bloque {idx}**")
+        
+        if idx == 1:
+            st.code("Inicio  B0      K2     K1", language="text")
+            st.code(f"K1                          {signals}", language="text")
+        else:
+            prev_binary = " ".join(binary_map.get(m, "??") for m in steps[idx-2])
+            st.code(f"K{idx-1}      {prev_binary}     K{idx}     K{idx-1}", language="text")
+            st.code(f"K{idx}                          {signals}", language="text")
+        
         st.markdown("")
-
-    st.caption("")
