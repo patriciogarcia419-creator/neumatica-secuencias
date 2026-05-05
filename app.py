@@ -63,16 +63,16 @@ if st.button("Generar Tabla", type="primary"):
     st.markdown("### Bloques")
     
     for idx, s in enumerate(steps, start=1):
-        signals = " ".join(signal_map.get(m, "??") for m in s)
-        
         st.markdown(f"**Bloque {idx}**")
+        
+        signals = " ".join(signal_map.get(m, "??") for m in s)
         
         if idx == 1:
             st.code("Inicio  B0      K2     K1", language="text")
-            st.code(f"K1                          {signals}", language="text")
+            st.code(f"K1                      {signals}", language="text")
         else:
             prev_binary = " ".join(binary_map.get(m, "??") for m in steps[idx-2])
-            st.code(f"K{idx-1}      {prev_binary}     K{idx}     K{idx-1}", language="text")
-            st.code(f"K{idx}                          {signals}", language="text")
+            st.code(f"K{idx-1}    {prev_binary}     K{idx}     K{idx-1}", language="text")
+            st.code(f"K{idx}                      {signals}", language="text")
         
         st.markdown("")
